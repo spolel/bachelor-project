@@ -1,0 +1,1 @@
+--mysql-table-engine=innodb --max-time=300 --num-threads=32 --oltp-table-size=10000 --oltp-tables-count=64 --max-requests=1000000000

@@ -1,0 +1,7 @@
+
+
+galera start $1
+
+galera benchmark $2
+
+galera stop
