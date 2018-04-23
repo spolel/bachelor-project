@@ -1,1 +1,1 @@
-echo pw | sudo -S cp ~/galera/galera-test.sh /usr/local/bin/galera
+echo pw | sudo -S cp ~/galera/galera.sh /usr/local/bin/galera

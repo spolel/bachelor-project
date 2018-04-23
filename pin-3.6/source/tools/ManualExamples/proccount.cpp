@@ -85,10 +85,6 @@ VOID Routine(RTN rtn, VOID *v)
     rc->_address = RTN_Address(rtn);
     rc->_icount = 0;
     rc->_rtnCount = 0;
-
-    // Add to list of routines
-    rc->_next = RtnList;
-    RtnList = rc;
             
     RTN_Open(rtn);
             
@@ -102,65 +98,47 @@ VOID Routine(RTN rtn, VOID *v)
         INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_PTR, &(rc->_icount), IARG_END);
     }
 
-    
     RTN_Close(rtn);
-}
 
-void swap(RTN_COUNT *a, RTN_COUNT *b){
-    RTN_COUNT temp = *a;
-    *a = *b;
-    *b = temp;
-    RTN_COUNT *temptr = a->_next;
-    a->_next = b->_next;
-    b->_next = temptr;
+    
+    // Add to list of routines
+    RTN_COUNT * ptr = 0;
+    RTN_COUNT * prev_ptr = 0;
+    ptr = RtnList;
+    
+    if(RtnList->_rtnCount <= rc->_rtnCount){
+	rc->_next = RtnList->_next;
+	RtnList = rc;
+    }else{
+    while(ptr != NULL){
+        if(ptr->_rtnCount <= rc->_rtnCount){
+	    rc->_next = ptr;
+            prev_ptr->_next = rc;
+	}
+   	prev_ptr = ptr;
+	ptr = ptr->_next;
+    }
+    }
 }
- 
-void bubbleSort(RTN_COUNT *start)
-{
-    int swapped;
-
-    RTN_COUNT *ptr;
-    RTN_COUNT *lastprt = NULL;
- 
-    if (start == NULL)
-        return;
- 
-    do{
-        swapped = 0;
-        ptr = start;
- 
-        while (ptr->_next != lastprt)
-        {
-	    if(ptr->_next == NULL)
-	 	break;
-            if (ptr->_icount < ptr->_next->_icount)
-            { 
-                swap(ptr, ptr->_next);
-                swapped = 1;
-            }
-            ptr = ptr->_next;
-        }
-        lastprt = ptr;
-    }while (swapped);
-}
-
 
 // This function is called when the application exits
 // It prints the name and count for each procedure
 VOID Fini(INT32 code, VOID *v)
 {
-    outFile << "Procedure;Image;Calls;Instructions" << endl;
-
-    //std::cout << "bubblesort ! \n" << endl;
-    bubbleSort(RtnList);
+    outFile << setw(23) << "Procedure" << " "
+          << setw(15) << "Image" << " "
+          << setw(18) << "Address" << " "
+          << setw(12) << "Calls" << " "
+          << setw(12) << "Instructions" << endl;
 
     for (RTN_COUNT * rc = RtnList; rc; rc = rc->_next)
     {
         if (rc->_icount > 0)
-            outFile << rc->_name << ";"
-                  << rc->_image << ";"
-                  << rc->_rtnCount << ";"
-                  << rc->_icount << endl;
+            outFile << setw(23) << rc->_name << " "
+                  << setw(15) << rc->_image << " "
+                  << setw(18) << hex << rc->_address << dec <<" "
+                  << setw(12) << rc->_rtnCount << " "
+                  << setw(12) << rc->_icount << endl;
     }
 
 }

@@ -33,7 +33,7 @@ case "$1" in
    fi
    echo starting server
 
-   echo pw | sudo -S /home/spolel/pin-3.6/pin -t /home/spolel/pin-3.6/source/tools/ManualExamples/obj-intel64/$2.so -- /usr/sbin/mysqld --console & 
+   echo pw | sudo -S /home/spolel/pin-3.6/pin -t /home/spolel/pin-3.6/source/tools/MyPinTool/obj-intel64/$2.so -- /usr/sbin/mysqld --console & 
 
    while (echo $(mysql -u root -ppw -e "SHOW STATUS LIKE 'wsrep_cluster_size'" 2>&1 >/dev/null) | grep -q ERROR)
    do

@@ -36,27 +36,50 @@ END_LEGAL */
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "pin.H"
 
 ofstream outFile;
 
-// Holds instruction count for a single procedure
-typedef struct RtnCount
-{
-    string _name;
-    string _image;
-    ADDRINT _address;
-    RTN _rtn;
-    UINT64 _rtnCount;
-    UINT64 _icount;
-    struct RtnCount * _next;
-} RTN_COUNT;
+int *feature_table;
+int *time_table;
+int table_index;
+int table_size;
+int table_allocated_size = 100000;
 
-// Linked list of instruction counts for each routine
-RTN_COUNT * RtnList = 0;
+clock_t begin;
+
+string target_name= "key_cmp"; 
+
+VOID init_tables(){
+	table_index = 0;
+	table_size = 0;
+	feature_table = (int *) malloc(table_allocated_size * sizeof(unsigned int));
+	time_table = (int *) malloc(table_allocated_size * sizeof(double));
+}
+
+VOID free_tables(){
+	free(feature_table);
+	free(time_table);	
+}
+
 
 // This function is called before every instruction is executed
+VOID measure_feature(unsigned int feature_value) {
+	table_index = (table_index + 1) % table_allocated_size;
+	
+	if (table_size < table_allocated_size)
+		table_size += 1;
+	feature_table[table_index] = feature_value;
+	begin = clock();
+}
+
+VOID measure_time() {
+	time_table[table_index] = (double)(clock() - begin);
+}
+
 VOID docount(UINT64 * counter)
 {
     (*counter)++;
@@ -74,103 +97,34 @@ const char * StripPath(const char * path)
 // Pin calls this function every time a new rtn is executed
 VOID Routine(RTN rtn, VOID *v)
 {
-    
-    // Allocate a counter for this routine
-    RTN_COUNT * rc = new RTN_COUNT;
+    if (target_name != RTN_Name(rtn))
+	return;
 
-    // The RTN goes away when the image is unloaded, so save it now
-    // because we need it in the fini
-    rc->_name = RTN_Name(rtn);
-    rc->_image = StripPath(IMG_Name(SEC_Img(RTN_Sec(rtn))).c_str());
-    rc->_address = RTN_Address(rtn);
-    rc->_icount = 0;
-    rc->_rtnCount = 0;
+    std::cout << endl << "         ======== RECOGNISED FUNCTION =======        " << endl << endl;
 
-    // Add to list of routines
-    rc->_next = RtnList;
-    RtnList = rc;
-            
     RTN_Open(rtn);
             
     // Insert a call at the entry point of a routine to increment the call count
-    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)docount, IARG_PTR, &(rc->_rtnCount), IARG_END);
-    
-    // For each instruction of the routine
-    for (INS ins = RTN_InsHead(rtn); INS_Valid(ins); ins = INS_Next(ins))
-    {
-        // Insert a call to docount to increment the instruction counter for this rtn
-        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_PTR, &(rc->_icount), IARG_END);
-    }
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)measure_feature,
+                       IARG_FUNCARG_ENTRYPOINT_VALUE, 2,
+                       IARG_END);
 
-    
+    measure_time();
     RTN_Close(rtn);
 }
-
-void swap(RTN_COUNT *a, RTN_COUNT *b)
-{
-    RTN_COUNT *temp = a;
-    a = b;
-    b = temp;
-}
- 
-void bubbleSort(RTN_COUNT *start)
-{
-    int swapped;
-
-    RTN_COUNT *ptr;
-    RTN_COUNT *lastprt = NULL;
- 
-    if (start == NULL)
-        return;
- 
-    do{
-        swapped = 0;
-        ptr = start;
- 
-        while (ptr->_next != lastprt)
-        {
-            if (ptr->_rtnCount > ptr->_next->_rtnCount)
-            { 
-                swap(ptr, ptr->_next);
-                swapped = 1;
-            }
-            ptr = ptr->_next;
-        }
-        lastprt = ptr;
-    }while (swapped);
-}
-
-
+       
 // This function is called when the application exits
 // It prints the name and count for each procedure
-VOID Fini(INT32 code, 
-
-
-
-
-
-
-
-VOID *v)
-{
-    outFile << setw(23) << "Procedure" << " "
-          << setw(15) << "Image" << " "
-          << setw(18) << "Address" << " "
-          << setw(12) << "Calls" << " "
-          << setw(12) << "Instructions" << endl;
-
-    std::cout << "bubblesort ! \n" << endl;
-    bubbleSort(RtnList);
-
-    for (RTN_COUNT * rc = RtnList; rc; rc = rc->_next)
-    {
-        if (rc->_icount > 0)
-            outFile << setw(23) << rc->_name << " "
-                  << setw(15) << rc->_image << " "
-                  << setw(18) << hex << rc->_address << dec <<" "
-                  << setw(12) << rc->_rtnCount << " "
-                  << setw(12) << rc->_icount << endl;
+VOID Fini(INT32 code, VOID *v){
+    
+    outFile << "Feature;Time" << endl;
+    
+    for (int i = 0; i <= table_size; i++)
+    {   
+        outFile << feature_table[i] << ";" << time_table[i] << endl;
     }
+
+    free_tables();
 
 }
 
@@ -195,11 +149,13 @@ int main(int argc, char * argv[])
     // Initialize symbol table code, needed for rtn instrumentation
     PIN_InitSymbols();
 
-    outFile.open("proccount.out");
+    outFile.open("uint_feature.out");
 
     // Initialize pin
     if (PIN_Init(argc, argv)) return Usage();
-
+    
+    init_tables();
+    
     // Register Routine to be called to instrument rtn
     RTN_AddInstrumentFunction(Routine, 0);
 
