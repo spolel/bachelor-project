@@ -41,12 +41,12 @@ END_LEGAL */
 #include <time.h>
 #include "pin.H"
 
-#define TARGET_NAME "_ZN12Field_string4packEPhPKhj"
+#define TARGET_NAME "_Z7key_cmpP16st_key_part_infoPKhj"
 
 ofstream outFile;
 
-int *feature_table;
-int *time_table;
+unsigned int *feature_table;
+clock_t *time_table;
 int table_index;
 int table_size;
 int table_allocated_size = 100000;
@@ -54,8 +54,8 @@ int table_allocated_size = 100000;
 VOID init_tables(){
 	table_index = 0;
 	table_size = 0;
-	feature_table = (int *) malloc(table_allocated_size * sizeof(unsigned int));
-	time_table = (int *) malloc(table_allocated_size * sizeof(clock_t));
+	feature_table = (unsigned int *) malloc(table_allocated_size * sizeof(unsigned int));
+	time_table = (clock_t *) malloc(table_allocated_size * sizeof(clock_t));
 }
 
 VOID free_tables(){
@@ -101,7 +101,7 @@ VOID Fini(INT32 code, VOID *v){
     outFile << "Table size: " << table_size << endl;
     outFile << "Feature;Time(s)" << endl;   
 
-    for (int i = 0; i <= table_size; i++)
+    for (int i = 0; i < table_size; i++)
     {   
         outFile << feature_table[i] << ";" << ((double)time_table[i])/CLOCKS_PER_SEC << endl;
     }
