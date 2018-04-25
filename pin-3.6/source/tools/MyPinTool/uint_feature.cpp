@@ -51,7 +51,7 @@ int table_allocated_size = 100000;
 
 clock_t begin;
 
-string target_name= "key_cmp"; 
+string target_name= "_ZN12Field_string4packEPhPKhj"; 
 
 VOID init_tables(){
 	table_index = 0;
@@ -99,8 +99,6 @@ VOID Routine(RTN rtn, VOID *v)
 {
     if (target_name != RTN_Name(rtn))
 	return;
-
-    std::cout << endl << "         ======== RECOGNISED FUNCTION =======        " << endl << endl;
 
     RTN_Open(rtn);
             

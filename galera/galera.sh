@@ -83,7 +83,7 @@ case "$1" in
 
    sysbench --mysql-user=root --mysql-password=pw --db-driver=mysql $(< /etc/galera/sysbench-galera.cnf) ${@:3} $2 prepare
    sysbench --mysql-user=root --mysql-password=pw --db-driver=mysql $(< /etc/galera/sysbench-galera.cnf) ${@:3} $2 run | tee $HOME/out/$2-$(date +%Y-%m-%d-%H:%M:%S).out
-   sysbench --mysql-user=root --mysql-password=pw --db-driver=mysql $2 cleanup
+   sysbench --mysql-user=root --mysql-password=pw --db-driver=mysql $(< /etc/galera/sysbench-galera.cnf) ${@:3} $2 cleanup
 
    exit 1
    ;;

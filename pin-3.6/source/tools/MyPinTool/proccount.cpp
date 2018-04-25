@@ -149,7 +149,7 @@ void bubbleSort(RTN_COUNT *start)
 // It prints the name and count for each procedure
 VOID Fini(INT32 code, VOID *v)
 {
-    outFile << "Procedure;Image;Calls;Instructions" << endl;
+    outFile << "Procedure;Address;Image;Calls;Instructions" << endl;
 
     //std::cout << "bubblesort ! \n" << endl;
     bubbleSort(RtnList);
@@ -158,6 +158,7 @@ VOID Fini(INT32 code, VOID *v)
     {
         if (rc->_icount > 0)
             outFile << rc->_name << ";"
+		  << rc->_address << ";"
                   << rc->_image << ";"
                   << rc->_rtnCount << ";"
                   << rc->_icount << endl;
