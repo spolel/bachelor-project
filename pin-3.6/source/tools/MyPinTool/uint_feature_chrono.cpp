@@ -41,9 +41,13 @@ END_LEGAL */
 #include <time.h>
 #include "pin.H"
 
+#include <chrono>
+
+using clock = std::chrono::high_resolution_clock;
+
 ofstream outFile;
+clock::duration * time_table;
 unsigned int *feature_table;
-clock_t *time_table;
 int table_index;
 int table_size;
 int table_allocated_size = 100000;
@@ -52,12 +56,12 @@ VOID init_tables(){
 	table_index = 0;
 	table_size = 0;
 	feature_table = (unsigned int *) malloc(table_allocated_size * sizeof(unsigned int));
-	time_table = (clock_t *) malloc(table_allocated_size * sizeof(clock_t));
+	time_table = new clock::duration[table_allocated_size];
 }
 
 VOID free_tables(){
 	free(feature_table);
-	free(time_table);
+	delete[](time_table);	
 }
 
 VOID measure_feature(unsigned int feature_value){
@@ -65,11 +69,12 @@ VOID measure_feature(unsigned int feature_value){
 		table_size += 1;
 
 	feature_table[table_index] = feature_value;
-	time_table[table_index] = clock();
+	entry_time = clock::now();
+
 }
 
 VOID measure_time() {
-        time_table[table_index] = clock() - time_table[table_index];
+        time_table[table_index] = clock::now() - entry_time;
 	table_index = (table_index + 1) % table_allocated_size;
 }
 
@@ -88,8 +93,9 @@ VOID Image(IMG img, VOID *v)
         RTN_InsertCall(featureRtn, IPOINT_BEFORE, (AFUNPTR)measure_feature,
                        IARG_FUNCARG_ENTRYPOINT_VALUE, feature_pos,
                        IARG_END);
-    	measure_time();    
+        
         RTN_Close(featureRtn);
+        measure_time();
     }
 }
        
