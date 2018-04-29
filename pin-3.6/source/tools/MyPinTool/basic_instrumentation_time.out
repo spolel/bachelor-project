@@ -1,0 +1,31 @@
+Entering f at 510000 with feature 0 and t_index 0; thread 0
+Entering f at 520000 with feature 1 and t_index 1; thread 0
+Entering f at 520000 with feature 2 and t_index 2; thread 0
+Entering f at 520000 with feature 3 and t_index 3; thread 0
+Entering f at 520000 with feature 4 and t_index 4; thread 0
+Feature;Time(s)
+
+## THREAD 0 ##
+Feature: 0; Clock: 0.01; Wall-time: 0.003977
+Feature: 1; Clock: 0; Wall-time: 1.00956
+Feature: 2; Clock: 0; Wall-time: 2.00362
+Feature: 3; Clock: 0; Wall-time: 3.00119
+Feature: 4; Clock: 0; Wall-time: 4.00069
+
+## THREAD 1 ##
+
+## THREAD 2 ##
+
+## THREAD 3 ##
+
+## THREAD 4 ##
+
+## THREAD 5 ##
+
+## THREAD 6 ##
+
+## THREAD 7 ##
+
+## THREAD 8 ##
+
+## THREAD 9 ##

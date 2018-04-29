@@ -42,11 +42,7 @@ END_LEGAL */
 #include <stack>
 #include "pin.H"
 
-
-#define TARGET_NAME "fib"
-//#define TARGET_NAME "_Z7key_cmpP16st_key_part_infoPKhj"
-
-#define MAX_THREADS 10
+#define MAX_THREADS 100
 
 ofstream outFile;
 
@@ -55,6 +51,15 @@ std::vector<struct timeval> wall_time_table[MAX_THREADS];
 std::vector<unsigned int> feature_table[MAX_THREADS];
 std::stack<unsigned int> executing[MAX_THREADS];
 int table_index[MAX_THREADS];
+
+unsigned int max_tid = 0;
+
+//const char *target_name = "_Z1fij";
+#define TARGET_NAME "_ZN12Field_string4packEPhPKhj"
+#define FEATURE_POS 2
+#define OUT_FILE_NAME "basic_instrumentation_time.out"
+
+//int feature_pos = 1;
 
 VOID init_tables(){
 	for (int t = 0; t < MAX_THREADS; t++) {
@@ -71,9 +76,13 @@ VOID free_tables(){
 }
 
 VOID measure_feature(UINT32 feature_value, THREADID tid){
-	tid--;
-	if (tid >= MAX_THREADS)
-		return;
+	//tid--;
+	//outFile << tid << endl;
+	//if (tid >= MAX_THREADS)
+	//	return;
+	if(tid > max_tid){
+		max_tid = tid;	
+	}
 	table_index[tid]++;
 	executing[tid].push(table_index[tid]);
 	feature_table[tid].push_back(feature_value);
@@ -81,13 +90,16 @@ VOID measure_feature(UINT32 feature_value, THREADID tid){
 	struct timeval now;
 	gettimeofday(&now, 0);
 	wall_time_table[tid].push_back(now);
-	//std::cout << "Entering f at " << clock_table[tid][table_index[tid]] << " with feature " << feature_value << " and t_index " << table_index[tid] << "; thread " <<  tid  << std::endl;
+	//outFile << "Entering f at " << clock_table[tid][table_index[tid]] << " with feature " << feature_value << " and t_index " << table_index[tid] << "; thread " <<  tid  << std::endl;
 }
 
 VOID measure_time(INT32 ret_value, THREADID tid) {
-	tid--;
-	if (tid >= MAX_THREADS)
-		return;
+	//tid--;
+	//if (tid >= MAX_THREADS)
+	//	return;
+	if(tid > max_tid){
+                max_tid = tid;
+        }
 	unsigned int index = executing[tid].top();
 	clock_table[tid][index] = clock() - clock_table[tid][index];
 	struct timeval now;
@@ -109,11 +121,12 @@ VOID Image(IMG img, VOID *v)
     RTN featureRtn = RTN_FindByName(img, TARGET_NAME);
     if (RTN_Valid(featureRtn))
     {   
-        RTN_Open(featureRtn);
+
+   	RTN_Open(featureRtn);
         
         // Instrument malloc() to print the input argument value and the return value.
         RTN_InsertCall(featureRtn, IPOINT_BEFORE, (AFUNPTR)measure_feature,
-                       IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
+                       IARG_FUNCARG_ENTRYPOINT_VALUE, FEATURE_POS,
                        IARG_THREAD_ID,
 		       IARG_END);
         
@@ -130,9 +143,9 @@ VOID Fini(INT32 code, VOID *v){
    
     outFile << "Feature;Time(s)" << endl;   
 
-    for (unsigned int t = 0; t < MAX_THREADS; t++) {
+    for (unsigned int t = 0; t <= max_tid; t++) {
 	outFile << std::endl << "## THREAD " << t << " ##" << std::endl;
-	for (unsigned int i = 0; i < feature_table[t].size(); i++) {   
+        for (unsigned int i = 0; i < feature_table[t].size(); i++) {   
 		outFile << "Feature: " << feature_table[t][i] << "; Clock: " << ((double)clock_table[t][i]) / CLOCKS_PER_SEC << "; Wall-time: " << (double)wall_time_table[t][i].tv_sec + (double)wall_time_table[t][i].tv_usec / 1000000 << endl;
 	}
     }
@@ -157,10 +170,12 @@ INT32 Usage()
 
 int main(int argc, char * argv[])
 {
+    
+
     // Initialize symbol table code, needed for rtn instrumentation
     PIN_InitSymbols();
 
-    outFile.open("uint_feature2.out");
+    outFile.open(OUT_FILE_NAME);
 
     // Initialize pin
     if (PIN_Init(argc, argv)) return Usage();
